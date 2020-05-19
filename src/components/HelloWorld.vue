@@ -9,14 +9,39 @@ export default {
     msg: String
   },
   mounted() {
-    // 注释
-    this.init()
+    // 注释123123
+    this.init();
+    this.getHero('5ec1f8481b9068f9773e5b75');
   },
   methods: {
+    // 登录
     init() {
       this.$http({
         url: '/login',
         methods: 'GET',
+      }).then(res => {
+        console.log(res)
+      }).catch(err => {
+        console.log(err)
+      })
+    },
+    // 获取全量用户
+    getHero() {
+      this.$http({
+        url:'/api/hero',
+        methods: 'get'
+      }).then(res => {
+        console.log(res)
+      }).catch(err => {
+        console.log(err)
+      })
+    
+    },
+    // 获取某一个user
+    getCurHero(userId) {
+      this.$http({
+        url:'/api/hero?id=' + userId,
+        methods: 'get',
       }).then(res => {
         console.log(res)
       }).catch(err => {
