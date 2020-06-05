@@ -1,0 +1,37 @@
+{
+    "images": [
+        {
+            "src": "/static/imgs/0.jpg"
+        },
+        {
+            "src": "/static/imgs/1.jpg"
+        },
+        {
+            "src": "/static/imgs/2.jpg"
+        },
+        {
+            "src": "/static/imgs/3.jpg"
+        },
+        {
+            "src": "/static/imgs/4.jpg"
+        },
+        {
+            "src": "/static/imgs/5.jpg"
+        },
+        {
+            "src": "/static/imgs/6.jpg"
+        },
+        {
+            "src": "/static/imgs/7.jpg"
+        },
+        {
+            "src": "/static/imgs/8.jpg"
+        },
+        {
+            "src": "/static/imgs/9.jpg"
+        },
+        {
+            "src": "/static/imgs/10.jpg"
+        }
+    ]
+}
