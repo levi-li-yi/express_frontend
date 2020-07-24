@@ -5,7 +5,8 @@
     <!-- <Openlayers/> -->
     <!-- <Openlayers1/> -->
     <!-- <Openlayers2/> -->
-    <Animation/>
+    <!-- <Animation/> -->
+    <Upload/>
   </div>
 </template>
 
@@ -14,7 +15,8 @@
 // import Openlayers from './components/Openlayers.vue'
 // import Openlayers1 from './components/Openlayers1.vue'
 // import Openlayers2 from './components/Openlayers2.vue'
-import Animation from './components/Animation.vue'
+// import Animation from './components/Animation.vue'
+import Upload from './components/Upload.vue'
 
 
 export default {
@@ -24,7 +26,8 @@ export default {
     // Openlayers,
     // Openlayers1
     // Openlayers2
-    Animation
+    // Animation
+    Upload
   }
 }
 </script>
