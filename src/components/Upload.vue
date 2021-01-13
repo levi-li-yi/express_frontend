@@ -186,4 +186,144 @@ export default {
     },
   }
 }
+
+// 优化：网络请求并发控制: 参考
+async sendRequest(forms, max=4) {
+  return new Promise(resolve => {
+    const len = forms.length;
+    let idx = 0;
+    let counter = 0;
+    const start = async ()=> {
+      // 有请求，有通道
+      while (idx < len && max > 0) {
+        max--; // 占用通道
+        console.log(idx, "start");
+        const form = forms[idx].form;
+        const index = forms[idx].index;
+        idx++
+        request({
+          url: '/upload',
+          data: form,
+          onProgress: this.createProgresshandler(this.chunks[index]),
+          requestList: this.requestList
+        }).then(() => {
+          max++; // 释放通道
+          counter++;
+          if (counter === len) {
+            resolve();
+          } else {
+            start();
+          }
+        });
+      }
+    }
+    start();
+  });
+}
+
+// 优化：由TCP拥塞问题，实现慢启动策略；动态调整文件切片大小
+async handleUpload1(){
+      // @todo数据缩放的比率 可以更平缓  
+      // @todo 并发+慢启动
+
+      // 慢启动上传逻辑 
+      const file = this.container.file
+      if (!file) return;
+      this.status = Status.uploading;
+      const fileSize = file.size
+      let offset = 1024*1024 
+      let cur = 0 
+      let count =0
+      this.container.hash = await this.calculateHashSample();
+
+      while(cur<fileSize){
+        // 切割offfset大小
+        const chunk = file.slice(cur, cur+offset)
+        cur+=offset
+        const chunkName = this.container.hash + "-" + count;
+        const form = new FormData();
+        form.append("chunk", chunk);
+        form.append("hash", chunkName);
+        form.append("filename", file.name);
+        form.append("fileHash", this.container.hash);
+        form.append("size", chunk.size);
+
+        let start = new Date().getTime()
+        await request({ url: '/upload',data: form })
+        const now = new Date().getTime()
+        
+        const time = ((now -start)/1000).toFixed(4)
+        let rate = time/30
+        // 速率有最大2和最小0.5
+        if(rate<0.5) rate=0.5
+        if(rate>2) rate=2
+        // 新的切片大小等比变化
+        console.log(`切片${count}大小是${this.format(offset)},耗时${time}秒，是30秒的${rate}倍，修正大小为${this.format(offset/rate)}`)
+        // 动态调整offset
+        offset = parseInt(offset/rate)
+        // if(time)
+        count++
+      }
+    }
+}
+
+// 优化：并发重试和报错
+async sendRequest(urls, max=4) {
+      return new Promise((resolve,reject) => {
+         const len = urls.length;
+         let idx = 0;
+         let counter = 0;
+        const retryArr = []
+
+ 
+         const start = async ()=> {
+           // 有请求，有通道
+          while (counter < len && max > 0) {
+             max--; // 占用通道
+             console.log(idx, "start");
+            // 任务不能仅仅累加获取，而是要根据状态
+            // wait和error的可以发出请求 方便重试
+            const i = urls.findIndex(v=>v.status==Status.wait || v.status==Status.error )// 等待或者error
+            urls[i].status = Status.uploading
+            const form = urls[i].form;
+            const index = urls[i].index;
+            if(typeof retryArr[index]=='number'){
+              console.log(index,'开始重试')
+            }
+             request({
+               url: '/upload',
+               data: form,
+               onProgress: this.createProgresshandler(this.chunks[index]),
+               requestList: this.requestList
+             }).then(() => {
+               urls[i].status = Status.done
+               max++; // 释放通道
+               counter++;
+              urls[counter].done=true
+               if (counter === len) {
+                 resolve();
+               } else {
+                 start();
+               }
+            }).catch(()=>{
+               urls[i].status = Status.error
+               if(typeof retryArr[index]!=='number'){
+                  retryArr[index] = 0
+               }
+              // 次数累加
+              retryArr[index]++
+              // 一个请求报错3次的
+              if(retryArr[index]>=2){
+                return reject()
+              }
+              console.log(index, retryArr[index],'次报错')
+              // 3次报错以内的 重启
+              this.chunks[index].progress = -1 // 报错的进度条
+              max++; // 释放当前占用的通道，但是counter不累加              
+              start()
+            })
+           }
+         }
+         start();
+}
 </script>
